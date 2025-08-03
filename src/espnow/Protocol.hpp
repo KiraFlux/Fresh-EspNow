@@ -9,7 +9,6 @@
 
 #include "rs/Result.hpp"
 #include "rs/primitives.hpp"
-#include "rs/macro.hpp"
 
 #include "Peer.hpp"
 #include "Mac.hpp"
@@ -228,6 +227,10 @@ public:
 }
 
 namespace rs {
+
+#define return_case(__v) case __v: return #__v;
+#define return_default() default: return "Invalid";
+
 static str toString(espnow::Protocol::SetHandler value) {
     switch (value) {
         return_case(espnow::Protocol::SetHandler::Ok)
@@ -270,5 +273,8 @@ static str toString(espnow::Protocol::Send value) {
         return_default()
     }
 }
+
+#undef return_case
+#undef return_default
 
 }

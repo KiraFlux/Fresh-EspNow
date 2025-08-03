@@ -1,7 +1,6 @@
 #pragma once
 
 #include "rs/Result.hpp"
-#include "rs/macro.hpp"
 
 #include "Mac.hpp"
 
@@ -97,6 +96,9 @@ private:
 
 namespace rs {
 
+#define return_case(__v) case __v: return #__v;
+#define return_default() default: return "Invalid";
+
 static str toString(espnow::Peer::Add value) {
     switch (value) {
         return_case(espnow::Peer::Add::Ok)
@@ -120,5 +122,8 @@ static str toString(espnow::Peer::Del value) {
         return_default()
     }
 }
+
+#undef return_case
+#undef return_default
 
 }
