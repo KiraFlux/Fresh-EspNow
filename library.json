@@ -1,13 +1,21 @@
 {
-  "name": "",
+  "name": "Fresh-EspNow-Lib",
   "version": "1.0.0",
-  "description": "",
+  "description": "A user-friendly and modern C++ wrapper for ESP-NOW protocol",
   "keywords": [
-
+    "espnow",
+    "esp32",
+    "esp8266",
+    "wireless",
+    "communication",
+    "c++",
+    "wrapper",
+    "type-safe",
+    "error-handling"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/JamahaW/Fresh-EspNow-Lib"
+    "url": "https://github.com/JamahaW/Fresh-EspNow-Lib.git"
   },
   "authors": [
     {
@@ -17,7 +25,7 @@
   ],
   "license": "MIT",
   "frameworks": "arduino",
-  "platforms": "*",
+  "platforms": "espressif32, espressif8266",
   "dependencies": {
     "JamahaW/Rustify-Lib": "^1.0.0"
   },
