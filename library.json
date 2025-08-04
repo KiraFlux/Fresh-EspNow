@@ -1,5 +1,5 @@
 {
-  "name": "Fresh-EspNow-Lib",
+  "name": "Fresh-EspNow",
   "version": "1.0.0",
   "description": "C++ wrapper for ESP-NOW protocol",
   "keywords": [
@@ -22,7 +22,7 @@
   "frameworks": "arduino",
   "platforms": "espressif32",
   "dependencies": {
-    "Rustify-Lib": "https://github.com/JamahaW/Rustify-Lib.git"
+    "Rustify": "https://github.com/JamahaW/Rustify-Lib.git"
   },
   "export": {
     "include": "src/espnow"
