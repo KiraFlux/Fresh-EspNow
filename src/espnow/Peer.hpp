@@ -13,8 +13,7 @@ struct Peer {
 public:
 
     /// Результат добавления пира
-    enum class Add : rs::u8 {
-        Ok = 0x00, ///< Пир успешно добавлен
+    enum class AddError {
         NotInit, ///< Протокол ESP-NOW не был инициализирован
         InvalidArg, ///< Неверный аргумент
         Full, ///< Список пиров полон
@@ -24,7 +23,7 @@ public:
     };
 
     /// Добавить пир
-    static rs::Result<Add> add(const Mac &mac) {
+    static rs::Result<void, AddError> add(const Mac &mac) {
         esp_now_peer_info_t peer = {
             .channel = 0,
             .ifidx = WIFI_IF_STA,
@@ -33,12 +32,17 @@ public:
 
         std::copy(mac.begin(), mac.end(), peer.peer_addr);
 
-        return {translatePeerAdd(esp_now_add_peer(&peer))};
+        auto result = esp_now_add_peer(&peer);
+
+        if (result == ESP_OK) {
+            return {};
+        } else {
+            return {translatePeerAdd(result)};
+        }
     }
 
     /// Удалить пир
-    enum class Del : rs::u8 {
-        Ok = 0x00, /// Пир успешно удален
+    enum class DeleteError {
         NotInit, /// Протокол ESP-NOW не был инициализирован
         InvalidArg, /// Неверный аргумент
         NotFound, /// Пир не найден в списке добавленных
@@ -46,8 +50,14 @@ public:
     };
 
     /// Удалить пир
-    static rs::Result<Del> del(const Mac &mac) {
-        return {translatePeerDelete(esp_now_del_peer(mac.data()))};
+    static rs::Result<void, DeleteError> del(const Mac &mac) {
+        auto result = esp_now_del_peer(mac.data());
+
+        if (result == ESP_OK) {
+            return {};
+        } else {
+            return {translatePeerDelete(result)};
+        }
     }
 
     /// Проверить существование пира
@@ -57,37 +67,33 @@ public:
 
 private:
 
-    static Del translatePeerDelete(esp_err_t result) {
+    static DeleteError translatePeerDelete(esp_err_t result) {
         switch (result) {
-            case ESP_OK:
-                return Del::Ok;
             case ESP_ERR_ESPNOW_NOT_INIT:
-                return Del::NotInit;
+                return DeleteError::NotInit;
             case ESP_ERR_ESPNOW_ARG:
-                return Del::InvalidArg;
+                return DeleteError::InvalidArg;
             case ESP_ERR_ESPNOW_NOT_FOUND:
-                return Del::NotFound;
+                return DeleteError::NotFound;
             default:
-                return Del::UnknownError;
+                return DeleteError::UnknownError;
         }
     }
 
-    static Add translatePeerAdd(esp_err_t result) {
+    static AddError translatePeerAdd(esp_err_t result) {
         switch (result) {
-            case ESP_OK:
-                return Add::Ok;
             case ESP_ERR_ESPNOW_NOT_INIT:
-                return Add::NotInit;
+                return AddError::NotInit;
             case ESP_ERR_ESPNOW_ARG:
-                return Add::InvalidArg;
+                return AddError::InvalidArg;
             case ESP_ERR_ESPNOW_FULL:
-                return Add::Full;
+                return AddError::Full;
             case ESP_ERR_ESPNOW_NO_MEM:
-                return Add::NoMemory;
+                return AddError::NoMemory;
             case ESP_ERR_ESPNOW_EXIST:
-                return Add::Exists;
+                return AddError::Exists;
             default:
-                return Add::UnknownError;
+                return AddError::UnknownError;
         }
     }
 };
@@ -99,26 +105,24 @@ namespace rs {
 #define return_case(__v) case __v: return #__v;
 #define return_default() default: return "Invalid";
 
-static str toString(espnow::Peer::Add value) {
+static str toString(espnow::Peer::AddError value) {
     switch (value) {
-        return_case(espnow::Peer::Add::Ok)
-        return_case(espnow::Peer::Add::NotInit)
-        return_case(espnow::Peer::Add::InvalidArg)
-        return_case(espnow::Peer::Add::Full)
-        return_case(espnow::Peer::Add::NoMemory)
-        return_case(espnow::Peer::Add::Exists)
-        return_case(espnow::Peer::Add::UnknownError)
+        return_case(espnow::Peer::AddError::NotInit)
+        return_case(espnow::Peer::AddError::InvalidArg)
+        return_case(espnow::Peer::AddError::Full)
+        return_case(espnow::Peer::AddError::NoMemory)
+        return_case(espnow::Peer::AddError::Exists)
+        return_case(espnow::Peer::AddError::UnknownError)
         return_default()
     }
 }
 
-static str toString(espnow::Peer::Del value) {
+static str toString(espnow::Peer::DeleteError value) {
     switch (value) {
-        return_case(espnow::Peer::Del::Ok)
-        return_case(espnow::Peer::Del::NotInit)
-        return_case(espnow::Peer::Del::InvalidArg)
-        return_case(espnow::Peer::Del::NotFound)
-        return_case(espnow::Peer::Del::UnknownError)
+        return_case(espnow::Peer::DeleteError::NotInit)
+        return_case(espnow::Peer::DeleteError::InvalidArg)
+        return_case(espnow::Peer::DeleteError::NotFound)
+        return_case(espnow::Peer::DeleteError::UnknownError)
         return_default()
     }
 }

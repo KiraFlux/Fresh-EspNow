@@ -1,0 +1,27 @@
+{
+  "name": "",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JamahaW/Fresh-EspNow-Lib"
+  },
+  "authors": [
+    {
+      "name": "JamahaW",
+      "email": "kiraflux@duck.com"
+    }
+  ],
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "*",
+  "dependencies": {
+    "JamahaW/Rustify-Lib": "^1.0.0"
+  },
+  "export": {
+    "include": "src/espnow"
+  }
+}

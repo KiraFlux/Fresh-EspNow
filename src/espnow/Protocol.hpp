@@ -20,7 +20,7 @@ namespace espnow {
 struct Protocol {
 
     /// Статус доставки
-    enum class DeliveryStatus : rs::u8 {
+    enum class DeliveryStatus {
         Ok = 0x00, ///< Пакет дошел до получателя
         Fail = 0x01, ///< Не удалось доставить пакет
     };
@@ -47,26 +47,30 @@ struct Protocol {
     }
 
     /// Результат инициализации
-    enum class Init : rs::u8 {
-        Ok = 0x00, ///< Инициализация прошла успешно
+    enum class InitError {
         InternalError, ///< Внутренняя ошибка ESP-NOW API
         UnknownError, ///< Неизвестная ошибка ESP API
     };
 
     /// Инициализировать протокол ESP-NOW
-    static rs::Result<Init> init() {
-        return {translateInit(esp_now_init())};
+    static rs::Result<void, InitError> init() {
+        auto result = esp_now_init();
+
+        if (result == ESP_OK) {
+            return {};
+        } else {
+            return {translateInit(result)};
+        }
     }
 
-    enum class SetHandler : rs::u8 {
-        Ok = 0x00, ///< Обработчик успешно подключен
+    enum class HandlerSetError {
         NotInit, ///< Протокол ESP-NOW не был инициализирован
         InternalError, ///< Внутренняя ошибка ESP-NOW API
         UnknownError, ///< Неизвестная ошибка ESP API
     };
 
     /// Установить обработчик входящих сообщений
-    rs::Result<SetHandler> setReceiveHandler(OnReceiveFunction &&handler) {
+    rs::Result<void, HandlerSetError> setReceiveHandler(OnReceiveFunction &&handler) {
         _on_receive = std::move(handler);
 
         esp_err_t result;
@@ -77,11 +81,15 @@ struct Protocol {
             result = esp_now_register_recv_cb(onReceive);
         }
 
-        return {translateSetHandler(result)};
+        if (result == ESP_OK) {
+            return {};
+        } else {
+            return {translateSetHandler(result)};
+        }
     }
 
     /// Установить обработчик при доставке сообщений
-    rs::Result<SetHandler> setDeliveryHandler(OnDeliveryFunction &&handler) {
+    rs::Result<void, HandlerSetError> setDeliveryHandler(OnDeliveryFunction &&handler) {
         _on_delivery = std::move(handler);
 
         esp_err_t result;
@@ -92,15 +100,18 @@ struct Protocol {
             result = esp_now_register_send_cb(onDelivery);
         }
 
-        return {translateSetHandler(result)};
+        if (result == ESP_OK) {
+            return {};
+        } else {
+            return {translateSetHandler(result)};
+        }
     }
 
     /// Завершить работу протокола
     static void quit() { esp_now_deinit(); }
 
     /// Результат отправки сообщения
-    enum class Send : rs::u8 {
-        Ok = 0x00, ///< Сообщение успешно отправлено
+    enum class SendError {
         NotInit, ///< Протокол ESP-NOW не был инициализирован
         TooBigMessage, ///< Слишком большое сообщение
         InvalidArg, ///< Неверный аргумент
@@ -112,29 +123,37 @@ struct Protocol {
     };
 
     /// Отправить сообщение
-    template<typename T> static rs::Result<Send> send(const Mac &mac, const T &value) {
+    template<typename T> static rs::Result<void, SendError> send(const Mac &mac, const T &value) {
         static_assert(sizeof(T) < ESP_NOW_MAX_DATA_LEN, "Message is too big!");
 
-        return {
-            translateSend(esp_now_send(
-                mac.data(),
-                reinterpret_cast<const rs::u8 *>(&value),
-                sizeof(T)
-            ))
-        };
+        auto result = esp_now_send(
+            mac.data(),
+            reinterpret_cast<const rs::u8 *>(&value),
+            sizeof(T)
+        );
+
+        if (result == ESP_OK) {
+            return {};
+        } else {
+            return {translateSend(result)};
+        }
     }
 
     /// Отправить сообщение (данные из буфера)
-    static rs::Result<Send> send(const Mac &mac, const void *data, rs::u8 size) {
-        if (size > ESP_NOW_MAX_DATA_LEN) { return {Send::TooBigMessage}; }
+    static rs::Result<void, SendError> send(const Mac &mac, const void *data, rs::u8 size) {
+        if (size > ESP_NOW_MAX_DATA_LEN) { return {SendError::TooBigMessage}; }
 
-        return {
-            translateSend(esp_now_send(
-                mac.data(),
-                reinterpret_cast<const rs::u8 *>(data),
-                size
-            ))
-        };
+        auto result = esp_now_send(
+            mac.data(),
+            reinterpret_cast<const rs::u8 *>(data),
+            size
+        );
+
+        if (result == ESP_OK) {
+            return {};
+        } else {
+            return {translateSend(result)};
+        }
     }
 
 private:
@@ -171,48 +190,40 @@ private:
         return (status == ESP_NOW_SEND_SUCCESS) ? DeliveryStatus::Ok : DeliveryStatus::Fail;
     }
 
-    static Init translateInit(esp_err_t result) {
+    static InitError translateInit(esp_err_t result) {
+        if (result == ESP_ERR_ESPNOW_INTERNAL) {
+            return InitError::InternalError;
+        }
+        return InitError::UnknownError;
+    }
+
+    static HandlerSetError translateSetHandler(esp_err_t result) {
         switch (result) {
-            case ESP_OK:
-                return Init::Ok;
+            case ESP_ERR_ESPNOW_NOT_INIT:
+                return HandlerSetError::NotInit;
             case ESP_ERR_ESPNOW_INTERNAL:
-                return Init::InternalError;
+                return HandlerSetError::InternalError;
             default:
-                return Init::UnknownError;
+                return HandlerSetError::UnknownError;
         }
     }
 
-    static SetHandler translateSetHandler(esp_err_t result) {
+    static SendError translateSend(esp_err_t result) {
         switch (result) {
-            case ESP_OK:
-                return SetHandler::Ok;
             case ESP_ERR_ESPNOW_NOT_INIT:
-                return SetHandler::NotInit;
-            case ESP_ERR_ESPNOW_INTERNAL:
-                return SetHandler::InternalError;
-            default:
-                return SetHandler::UnknownError;
-        }
-    }
-
-    static Send translateSend(esp_err_t result) {
-        switch (result) {
-            case ESP_OK:
-                return Send::Ok;
-            case ESP_ERR_ESPNOW_NOT_INIT:
-                return Send::NotInit;
+                return SendError::NotInit;
             case ESP_ERR_ESPNOW_ARG:
-                return Send::InvalidArg;
+                return SendError::InvalidArg;
             case ESP_ERR_ESPNOW_INTERNAL:
-                return Send::InternalError;
+                return SendError::InternalError;
             case ESP_ERR_ESPNOW_NO_MEM:
-                return Send::NoMemory;
+                return SendError::NoMemory;
             case ESP_ERR_ESPNOW_NOT_FOUND:
-                return Send::PeerNotFound;
+                return SendError::PeerNotFound;
             case ESP_ERR_ESPNOW_IF:
-                return Send::IncorrectWiFiMode;
+                return SendError::IncorrectWiFiMode;
             default:
-                return Send::UnknownError;
+                return SendError::UnknownError;
         }
     }
 
@@ -231,12 +242,11 @@ namespace rs {
 #define return_case(__v) case __v: return #__v;
 #define return_default() default: return "Invalid";
 
-static str toString(espnow::Protocol::SetHandler value) {
+static str toString(espnow::Protocol::HandlerSetError value) {
     switch (value) {
-        return_case(espnow::Protocol::SetHandler::Ok)
-        return_case(espnow::Protocol::SetHandler::NotInit)
-        return_case(espnow::Protocol::SetHandler::InternalError)
-        return_case(espnow::Protocol::SetHandler::UnknownError)
+        return_case(espnow::Protocol::HandlerSetError::NotInit)
+        return_case(espnow::Protocol::HandlerSetError::InternalError)
+        return_case(espnow::Protocol::HandlerSetError::UnknownError)
         return_default()
     }
 }
@@ -249,27 +259,25 @@ static str toString(espnow::Protocol::DeliveryStatus status) {
     }
 }
 
-static str toString(espnow::Protocol::Init value) {
+static str toString(espnow::Protocol::InitError value) {
     switch (value) {
-        return_case(espnow::Protocol::Init::Ok)
-        return_case(espnow::Protocol::Init::InternalError)
-        return_case(espnow::Protocol::Init::UnknownError)
+        return_case(espnow::Protocol::InitError::InternalError)
+        return_case(espnow::Protocol::InitError::UnknownError)
         return_default()
     }
 }
 
 
-static str toString(espnow::Protocol::Send value) {
+static str toString(espnow::Protocol::SendError value) {
     switch (value) {
-        return_case(espnow::Protocol::Send::Ok)
-        return_case(espnow::Protocol::Send::TooBigMessage)
-        return_case(espnow::Protocol::Send::NotInit)
-        return_case(espnow::Protocol::Send::InvalidArg)
-        return_case(espnow::Protocol::Send::InternalError)
-        return_case(espnow::Protocol::Send::NoMemory)
-        return_case(espnow::Protocol::Send::PeerNotFound)
-        return_case(espnow::Protocol::Send::IncorrectWiFiMode)
-        return_case(espnow::Protocol::Send::UnknownError)
+        return_case(espnow::Protocol::SendError::TooBigMessage)
+        return_case(espnow::Protocol::SendError::NotInit)
+        return_case(espnow::Protocol::SendError::InvalidArg)
+        return_case(espnow::Protocol::SendError::InternalError)
+        return_case(espnow::Protocol::SendError::NoMemory)
+        return_case(espnow::Protocol::SendError::PeerNotFound)
+        return_case(espnow::Protocol::SendError::IncorrectWiFiMode)
+        return_case(espnow::Protocol::SendError::UnknownError)
         return_default()
     }
 }
