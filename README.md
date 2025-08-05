@@ -1,6 +1,6 @@
-# Fresh-EspNow
+# Fresh EspNow
 
-**Удобная и современная C++ обёртка для ESP-NOW протокола**
+**Удобная и современная C++ обёртка для протокола ESP NOW**
 
 ## Обзор
 
@@ -225,3 +225,4 @@ e.setDeliveryHandler([](const Mac& mac, DeliveryStatus status) {
 
 
 MIT License - Подробнее в [LICENSE](LICENSE)
+
