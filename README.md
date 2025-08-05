@@ -1,4 +1,4 @@
-# Fresh-EspNow-Lib
+# Fresh-EspNow
 
 **Удобная и современная C++ обёртка для ESP-NOW протокола**
 
@@ -19,7 +19,7 @@
 Добавьте в `platformio.ini`:
 ```ini
 lib_deps =
-    https://github.com/JamahaW/Fresh-EspNow-Lib.git
+    https://github.com/JamahaW/Fresh-EspNow.git
 ```
 
 ## Пример использования
