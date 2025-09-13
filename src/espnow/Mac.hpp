@@ -2,7 +2,7 @@
 
 #include <esp_now.h>
 
-#include "rs/primitives.hpp"
+#include "rs/aliases.hpp"
 #include "rs/ArrayString.hpp"
 
 

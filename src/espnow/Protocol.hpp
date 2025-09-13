@@ -8,7 +8,7 @@
 #include <esp_mac.h>
 
 #include "rs/Result.hpp"
-#include "rs/primitives.hpp"
+#include "rs/aliases.hpp"
 
 #include "Peer.hpp"
 #include "Mac.hpp"
