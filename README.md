@@ -19,7 +19,7 @@
 Добавьте в `platformio.ini`:
 ```ini
 lib_deps =
-    https://github.com/JamahaW/Fresh-EspNow.git
+    https://github.com/KiraFlux/Fresh-EspNow.git
 ```
 
 ## Пример использования

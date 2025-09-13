@@ -1,6 +1,6 @@
 {
   "name": "Fresh-EspNow",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "C++ wrapper for ESP-NOW protocol",
   "keywords": [
     "espnow",
@@ -10,11 +10,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/JamahaW/Fresh-EspNow.git"
+    "url": "https://github.com/KiraFlux/Fresh-EspNow.git"
   },
   "authors": [
     {
-      "name": "JamahaW",
+      "name": "KiraFlux",
       "email": "kiraflux@duck.com"
     }
   ],
@@ -22,7 +22,7 @@
   "frameworks": "arduino",
   "platforms": "espressif32",
   "dependencies": {
-    "Rustify": "https://github.com/JamahaW/Rustify.git"
+    "Rustify": "https://github.com/KiraFlux/Rustify.git"
   },
   "export": {
     "include": "src/espnow"
