@@ -1,6 +1,6 @@
 {
   "name": "Fresh-EspNow",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "C++ wrapper for ESP-NOW protocol",
   "keywords": [
     "espnow",
@@ -25,6 +25,6 @@
     "Rustify": "https://github.com/KiraFlux/Rustify.git"
   },
   "export": {
-    "include": "src/espnow"
+    "include": "src/kf"
   }
 }
