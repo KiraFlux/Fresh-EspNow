@@ -1,12 +1,13 @@
 #pragma once
 
 #include <esp_now.h>
-#include <rs/aliases.hpp>
+#include <kf/aliases.hpp>
+
 
 namespace kf::espnow {
 
 /// @brief Перечисление ошибок операций API Espnow
-enum class Error : rs::u8 {
+enum class Error : kf::u8 {
     // Инициализация
 
     /// @brief Внутренняя ошибка ESP-NOW API
@@ -47,56 +48,33 @@ enum class Error : rs::u8 {
 /// @brief Перевод результата esp error в значение ошибки
 Error translateEspnowError(esp_err_t result) {
     switch (result) {
-        case ESP_ERR_ESPNOW_INTERNAL:
-            return Error::InternalError;
-
-        case ESP_ERR_ESPNOW_NOT_INIT:
-            return Error::NotInitialized;
-
-        case ESP_ERR_ESPNOW_ARG:
-            return Error::InvalidArg;
-
-        case ESP_ERR_ESPNOW_NO_MEM:
-            return Error::NoMemory;
-
-        case ESP_ERR_ESPNOW_NOT_FOUND:
-            return Error::PeerNotFound;
-
-        case ESP_ERR_ESPNOW_IF:
-            return Error::IncorrectWiFiMode;
-
-        case ESP_ERR_ESPNOW_FULL:
-            return Error::PeerListIsFull;
-
-        case ESP_ERR_ESPNOW_EXIST:
-            return Error::PeerAlreadyExists;
-
-        default:
-            return Error::UnknownError;
+        case ESP_ERR_ESPNOW_INTERNAL:return Error::InternalError;
+        case ESP_ERR_ESPNOW_NOT_INIT:return Error::NotInitialized;
+        case ESP_ERR_ESPNOW_ARG:return Error::InvalidArg;
+        case ESP_ERR_ESPNOW_NO_MEM:return Error::NoMemory;
+        case ESP_ERR_ESPNOW_NOT_FOUND:return Error::PeerNotFound;
+        case ESP_ERR_ESPNOW_IF:return Error::IncorrectWiFiMode;
+        case ESP_ERR_ESPNOW_FULL:return Error::PeerListIsFull;
+        case ESP_ERR_ESPNOW_EXIST:return Error::PeerAlreadyExists;
+        default:return Error::UnknownError;
     }
 }
 
-}// namespace kf::espnow
+#define return_case(__v) case __v: return #__v
+#define return_default() default: return "Invalid"
 
-namespace rs {
-
-#define return_case(__v) \
-    case __v: return #__v
-#define return_default() \
-    default: return "Invalid"
-
-static str toString(kf::espnow::Error value) {
+static const char *stringFromError(Error value) {
     switch (value) {
-        return_case(kf::espnow::Error::NotInitialized);
-        return_case(kf::espnow::Error::InternalError);
-        return_case(kf::espnow::Error::UnknownError);
-        return_case(kf::espnow::Error::TooBigMessage);
-        return_case(kf::espnow::Error::InvalidArg);
-        return_case(kf::espnow::Error::NoMemory);
-        return_case(kf::espnow::Error::PeerNotFound);
-        return_case(kf::espnow::Error::IncorrectWiFiMode);
-        return_case(kf::espnow::Error::PeerListIsFull);
-        return_case(kf::espnow::Error::PeerAlreadyExists);
+        return_case(Error::NotInitialized);
+        return_case(Error::InternalError);
+        return_case(Error::UnknownError);
+        return_case(Error::TooBigMessage);
+        return_case(Error::InvalidArg);
+        return_case(Error::NoMemory);
+        return_case(Error::PeerNotFound);
+        return_case(Error::IncorrectWiFiMode);
+        return_case(Error::PeerListIsFull);
+        return_case(Error::PeerAlreadyExists);
         return_default();
     }
 }
@@ -104,4 +82,4 @@ static str toString(kf::espnow::Error value) {
 #undef return_case
 #undef return_default
 
-}// namespace rs
+}// namespace kf::espnow

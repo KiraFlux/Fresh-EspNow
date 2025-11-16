@@ -22,7 +22,7 @@
   "frameworks": "arduino",
   "platforms": "espressif32",
   "dependencies": {
-    "Rustify": "https://github.com/KiraFlux/Rustify.git"
+    "KiraFlux-ToolBox": "https://github.com/KiraFlux/KiraFlux-ToolBox.git"
   },
   "export": {
     "include": "src/kf"
