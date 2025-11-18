@@ -24,6 +24,9 @@ struct EspNow : tools::Singleton<EspNow> {
     /// @brief Безопасный тип для MAC адреса
     using Mac = std::array<u8, ESP_NOW_ETH_ALEN>;
 
+    /// @brief Тип обработчика приёма от неизвестного пира
+    using UnknownReceiveHandler = std::function<void(const Mac &, const slice<const void>)>;
+
     /// @brief Перечисление ошибок операций API Espnow
     enum class Error : u8 {
 
@@ -83,7 +86,7 @@ struct EspNow : tools::Singleton<EspNow> {
     public:
 
         /// @brief Добавить пир
-        static Result <Peer, Error> add(const Mac &mac) {
+        static Result<Peer, Error> add(const Mac &mac) {
             esp_now_peer_info_t peer = {
                 .channel = 0,
                 .ifidx = WIFI_IF_STA,
@@ -92,7 +95,7 @@ struct EspNow : tools::Singleton<EspNow> {
 
             std::copy(mac.begin(), mac.end(), peer.peer_addr);
 
-            const auto result = esp_now_add_peer(&peer);
+            const auto result = esp_now_add_peer(&peer); // guru
 
             if (ESP_OK == result) {
                 return {Peer{mac}};
@@ -184,8 +187,12 @@ struct EspNow : tools::Singleton<EspNow> {
             mac_{mac} {}
     };
 
-    /// @brief Собственный адрес
-    const Mac mac{
+private:
+    std::map<Mac, Peer::Context> peer_contexts{};
+
+    UnknownReceiveHandler unknown_receive_handler{nullptr};
+
+    const Mac mac_{
         []() -> Mac {
             Mac ret{};
             esp_read_mac(ret.data(), ESP_MAC_WIFI_STA);
@@ -193,10 +200,8 @@ struct EspNow : tools::Singleton<EspNow> {
         }()
     };
 
-private:
-    std::map<Mac, Peer::Context> peer_contexts{};
-
 public:
+
     /// @brief Инициализировать протокол ESP-NOW
     [[nodiscard]] static Result<void, Error> init() {
         const auto wifi_ok = WiFiClass::mode(WIFI_MODE_STA);
@@ -224,26 +229,37 @@ public:
         (void) esp_now_deinit();
     }
 
+    /// @brief Собственный адрес
+    [[nodiscard]] const Mac &mac() const { return mac_; }
+
+    /// @brief Установить обработчик приёма сообщения от неизвестного мира
+    void setUnknownReceiveHandler(UnknownReceiveHandler &&handler) {
+        unknown_receive_handler = std::move(handler);
+    }
+
 private:
 
     static void onReceive(const u8 *raw_mac_address, const u8 *data, int size) {
         auto &self = EspNow::instance();
+
         const auto &source_address = *reinterpret_cast<const Mac *>(raw_mac_address);
+        const slice<const void> buffer{data, static_cast<usize>(size)};
 
         const auto peer_context = self.getPeerContext(source_address);
 
-        // unknown peer
         if (nullptr == peer_context) {
-            // on unknown peer handler
+            // unknown peer
+            if (nullptr == self.unknown_receive_handler) { return; }
+
+            self.unknown_receive_handler(source_address, buffer);
+
             return;
+        } else {
+            // known peer
+            if (nullptr == peer_context->on_receive) { return; }
+
+            peer_context->on_receive(buffer);
         }
-        // known peer
-
-        if (nullptr == peer_context->on_receive) { return; }
-
-        // has on receive handler
-        const slice<const void> buffer{data, static_cast<usize>(size)};
-        peer_context->on_receive(buffer);
     }
 
     Peer::Context *getPeerContext(const Mac &peer_mac) {
