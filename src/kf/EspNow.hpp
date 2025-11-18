@@ -77,11 +77,13 @@ struct EspNow : tools::Singleton<EspNow> {
             ReceiveHandler on_receive{nullptr};
         };
 
-        /// @brief MAC адрес пира
-        const Mac mac;
+    private:
+        Mac mac_;
+
+    public:
 
         /// @brief Добавить пир
-        static Result<Peer, Error> add(const Mac &mac) {
+        static Result <Peer, Error> add(const Mac &mac) {
             esp_now_peer_info_t peer = {
                 .channel = 0,
                 .ifidx = WIFI_IF_STA,
@@ -98,6 +100,9 @@ struct EspNow : tools::Singleton<EspNow> {
                 return {translateEspnowError(result)};
             }
         }
+
+        /// @brief MAC адрес пира
+        [[nodiscard]] const Mac &mac() const { return mac_; }
 
         /// @brief Отправить пакет
         template<typename T> [[nodiscard]] Result<void, Error> sendPacket(const T &value) {
@@ -122,11 +127,11 @@ struct EspNow : tools::Singleton<EspNow> {
             }
 
             auto &espnow = EspNow::instance();
-            auto context = espnow.getPeerContext(mac);
+            auto context = espnow.getPeerContext(mac_);
 
             if (nullptr == context) {
                 // context not exist yet - create and insert
-                espnow.peer_contexts.insert({mac, Context{std::move(handler)}});
+                espnow.peer_contexts.insert({mac_, Context{std::move(handler)}});
             } else {
                 // context already exist. Just mutate
                 context->on_receive = std::move(handler);
@@ -139,12 +144,12 @@ struct EspNow : tools::Singleton<EspNow> {
         [[nodiscard]] Result<void, Error> del() {
             auto &espnow = EspNow::instance();
 
-            if (nullptr != espnow.getPeerContext(mac)) {
+            if (nullptr != espnow.getPeerContext(mac_)) {
                 // context exist - delete it
-                espnow.peer_contexts.erase(mac);
+                espnow.peer_contexts.erase(mac_);
             }
 
-            const auto result = esp_now_del_peer(mac.data());
+            const auto result = esp_now_del_peer(mac_.data());
 
             if (ESP_OK == result) {
                 return {};
@@ -155,14 +160,14 @@ struct EspNow : tools::Singleton<EspNow> {
 
         /// @brief Проверить существование пира
         [[nodiscard]] bool exist() {
-            return esp_now_is_peer_exist(mac.data());
+            return esp_now_is_peer_exist(mac_.data());
         }
 
     private:
 
         [[nodiscard]] Result<void, Error> processSend(const void *data, usize len) {
             const auto result = esp_now_send(
-                mac.data(),
+                mac_.data(),
                 static_cast<const u8 *>(data),
                 len
             );
@@ -176,7 +181,7 @@ struct EspNow : tools::Singleton<EspNow> {
 
         // Создание пира только через Peer::add
         explicit Peer(const Mac &mac) :
-            mac{mac} {}
+            mac_{mac} {}
     };
 
     /// @brief Собственный адрес
