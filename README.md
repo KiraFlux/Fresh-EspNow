@@ -106,6 +106,10 @@ stringFromError(kf::EspNow::Error error) -> const char*
 
 На данный момент не является потокобезопасным
 
+## TODOs
+
+- Пир будет инкапсулировать stream, таким образом будет убран callback из другой задачи в пользовательском коде.
+
 ## Лицензия
 
 MIT License - Подробнее в [LICENSE](LICENSE)
