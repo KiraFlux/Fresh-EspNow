@@ -10,6 +10,7 @@
 #include <WiFi.h>
 
 #include <kf/aliases.hpp>
+#include <kf/slice.hpp>
 #include <kf/Result.hpp>
 #include <kf/String.hpp>
 #include <kf/tools/meta/Singleton.hpp>
@@ -115,11 +116,11 @@ struct EspNow : tools::Singleton<EspNow> {
 
         /// @brief Отправить буфер
         [[nodiscard]] Result<void, Error> sendBuffer(slice<const void> buffer) {
-            if (buffer.size > ESP_NOW_MAX_DATA_LEN) {
+            if (buffer.size() > ESP_NOW_MAX_DATA_LEN) {
                 return {Error::TooBigMessage};
             }
 
-            return processSend(buffer.ptr, buffer.size);
+            return processSend(buffer.data(), buffer.size());
         }
 
         /// Установить обработчик входящих сообщений
